@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-depl
+spec: # "spec" stands for specification, specify the desire state of a k8s resource( eg. pods, deployments, services )
+  replicas: 1
+  selector: # this "selector" tells the deployment how to find all the pods that is going to create
+    matchLabels:
+      app: orders
+  template: # "template" is the template of individual pod that deployment is going to create.
+    metadata:
+      labels:
+        app: orders # the "app: orders" right here is to match the selector -> matchLabels  -> app
+    spec: # specify the desire state of a template pod created by this deployment
+      containers:
+        - name: orders
+          image: bqu6204/orders
+          env:
+            - name: NATS_CLIENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NATS_URL
+              value: http://nats-srv:4222
+            - name: NATS_CLUSTER_ID
+              value: ticketing
+            - name: MONGO_URI
+              value: mongodb://orders-mongo-srv:27017/orders
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret # name of kubernetes secret object
+                  key: JWT_KEY
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-srv # this is the clusterIp to reach to this service from other services in cluster
+spec:
+  selector: # this "selector" tells this service how to find the set of pods, service suppose to gather access to
+    app: orders
+  ports:
+    - name: orders
+      protocol: TCP
+      port: 3000
+      targetPort: 3000

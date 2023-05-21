@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-depl
+spec: # "spec" stands for specification, specify the desire state of a k8s resource( eg. pods, deployments, services )
+  replicas: 1
+  selector: # this "selector" tells the deployment how to find all the pods that is going to create
+    matchLabels:
+      app: auth
+  template: # "template" is the template of individual pod that deployment is going to create.
+    metadata:
+      labels:
+        app: auth # the "app: auth" right here is to match the selector -> matchLabels  -> app
+    spec: # specify the desire state of a template pod created by this deployment
+      containers:
+        - name: auth
+          image: bqu6204/auth
+          env:
+            - name: MONGO_URI
+              value: "mongodb://auth-mongo-srv:27017/auth"
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret # name of kubernetes secret object
+                  key: JWT_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-srv # this is the clusterIp to reach to this service from other services in cluster
+spec:
+  selector: # this "selector" tells this service how to find the set of pods, service suppose to gather access to
+    app: auth
+  ports:
+    - name: auth
+      protocol: TCP
+      port: 3000
+      targetPort: 3000

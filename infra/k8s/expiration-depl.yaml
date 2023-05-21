@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expiration-depl
+spec: # "spec" stands for specification, specify the desire state of a k8s resource( eg. pods, deployments, services )
+  replicas: 1
+  selector: # this "selector" tells the deployment how to find all the pods that is going to create
+    matchLabels:
+      app: expiration
+  template: # "template" is the template of individual pod that deployment is going to create.
+    metadata:
+      labels:
+        app: expiration # the "app: expiration" right here is to match the selector -> matchLabels  -> app
+    spec: # specify the desire state of a template pod created by this deployment
+      containers:
+        - name: expiration
+          image: bqu6204/expiration
+          env:
+            - name: NATS_CLIENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NATS_URL
+              value: http://nats-srv:4222
+            - name: NATS_CLUSTER_ID
+              value: ticketing
+            - name: REDIS_HOST
+              value: expiration-redis-srv
+# We dont' need a cluster IP or any other service, since there's no other
+# part of application is going to access this service.
+
+# This expiration pod is going to communicate with other services 
+# through NATS streaming server.

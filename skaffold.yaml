@@ -1,0 +1,63 @@
+apiVersion: skaffold/v3 ###
+kind: Config
+deploy:
+  # "deploy" 表明專案的 kubernetes config檔案都在哪裡，以便 skaffold 替我們完成三件事：
+  # 1. 當我們start skaffold，替我們執行 kubectl apply -f 指令
+  # 2. 當我們對專案做改動，替我們 i. 直接複製更改過的檔案到pod ，或者是 ii. 重新build整個image(要看下面是否有設定)，以及 apply -f
+  # 3. 當我們結束 skaffold，替我們結束與.yaml相關的object(e.g. services, deployments, pods)
+  kubectl: {}
+manifests:
+  rawYaml:
+    - ./infra/k8s/*
+build:
+  local:
+    push: false # 默認為true，決定當我們build an image，是否要替我們push到docker hub上
+  artifacts:
+    - image: bqu6204/auth
+      context: ./auth # 告訴staffold有個k8s pod 在這個directory裡運行 ###
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: bqu6204/client
+      context: ./client
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "**/*.js"
+            dest: .
+    - image: bqu6204/tickets
+      context: ./tickets
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: bqu6204/orders
+      context: ./orders
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: bqu6204/expiration
+      context: ./expiration
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: bqu6204/payments
+      context: ./payments
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
